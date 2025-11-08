@@ -340,10 +340,12 @@ public class MenuUI {
             return;
         }
 
-        if (lance > emprestimo.getJurosAtual() || lance < 0) {
+        if (lance >= emprestimo.getJurosAtual() || lance < 0) {
             System.err.println("Juros inválido! (Deve ser menor que o atual e maior que 0)");
             return;
         }
+
+
 
         LeilaoService.darLance(emprestimo.getId(), pessoaLogada.getId(), lance);
         pessoaLogada.adicionarSelecionado(emprestimo);

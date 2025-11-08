@@ -43,6 +43,8 @@ public class LeilaoService {
 
         String sql = "UPDATE emprestimos SET jurosAtual = ?, id_credor = ? WHERE id = ?";
 
+
+
         try (Connection conn = Database.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 

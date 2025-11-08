@@ -86,17 +86,78 @@ public class LeilaoService {
     }
 
 
-    public static void pagarFatura(int emprestimoId) throws SQLException {
-        String sql = "DELETE FROM parcelas WHERE id = (" +
-                "SELECT id FROM parcelas " +
-                "WHERE id_emprestimo = ? " +
-                "ORDER BY dataVencimento ASC LIMIT 1" +
-                ")";
+    public static int getParcelasRestantesCount(int emprestimoId) throws SQLException {
+        String sqlCount = "SELECT COUNT(*) FROM parcelas WHERE id_emprestimo = ?";
 
         try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, emprestimoId);
-            pstmt.executeUpdate();
+             PreparedStatement pstmtCount = conn.prepareStatement(sqlCount)) {
+
+            pstmtCount.setInt(1, emprestimoId);
+            try (ResultSet rs = pstmtCount.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+
+    public static void pagarFatura(int emprestimoId) throws SQLException {
+        Connection conn = null;
+
+        try {
+            conn = Database.getConnection();
+            conn.setAutoCommit(false);
+
+
+            String sqlDeleteParcela = "DELETE FROM parcelas WHERE id = (" +
+                    "SELECT id FROM parcelas " +
+                    "WHERE id_emprestimo = ? " +
+                    "ORDER BY dataVencimento ASC LIMIT 1" +
+                    ")";
+
+            try (PreparedStatement pstmtDeleteParcela = conn.prepareStatement(sqlDeleteParcela)) {
+                pstmtDeleteParcela.setInt(1, emprestimoId);
+                pstmtDeleteParcela.executeUpdate();
+            }
+
+
+            int parcelasRestantes = 0;
+            String sqlCount = "SELECT COUNT(*) FROM parcelas WHERE id_emprestimo = ?";
+
+            try (PreparedStatement pstmtCount = conn.prepareStatement(sqlCount)) {
+                pstmtCount.setInt(1, emprestimoId);
+                try (ResultSet rs = pstmtCount.executeQuery()) {
+                    if (rs.next()) {
+                        parcelasRestantes = rs.getInt(1);
+                    }
+                }
+            }
+
+
+            if (parcelasRestantes == 0) {
+                String sqlDeleteEmprestimo = "DELETE FROM emprestimos WHERE id = ?";
+                try (PreparedStatement pstmtDeleteEmprestimo = conn.prepareStatement(sqlDeleteEmprestimo)) {
+                    pstmtDeleteEmprestimo.setInt(1, emprestimoId);
+                    pstmtDeleteEmprestimo.executeUpdate();
+                }
+            }
+
+            conn.commit();
+
+        } catch (SQLException e) {
+
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e;
+        } finally {
+
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
         }
     }
 
@@ -195,6 +256,11 @@ public class LeilaoService {
 
             Emprestimo emp = new Emprestimo(id, jurosAtual, credor, tomador, moedaSolicitada,
                     qtdMoedaSolicitada, moedaGarantia, qtdMoedaGarantia, parcelas, dataFechamento, estado);
+
+            if (estado == EstadoDoEmprestimo.FECHADO) {
+                int parcelasRestantes = getParcelasRestantesCount(id);
+                emp.setParcelasRestantes(parcelasRestantes);
+            }
 
             emprestimos.add(emp);
         }

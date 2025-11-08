@@ -22,7 +22,7 @@ public class Emprestimo {
     private int quantidadeDeParcelas;
     private LocalDate dataFechamentoAcordo;
     private EstadoDoEmprestimo estadoDoEmprestimo;
-
+    private int parcelasRestantes = 0;
 
     public Emprestimo(int id, double jurosAtual, Pessoa credor, Pessoa tomador,
                       Moeda moedaSolicitada, Double quantidadeMoedaSolicitada,
@@ -42,6 +42,10 @@ public class Emprestimo {
         this.estadoDoEmprestimo = estadoDoEmprestimo;
     }
 
+    public void setParcelasRestantes(int parcelasRestantes)
+    {
+        this.parcelasRestantes = parcelasRestantes;
+    }
 
     public Double getValorGarantiaEmDolar()
     {
@@ -99,13 +103,28 @@ public class Emprestimo {
 
     @Override
     public String toString() {
-        // Adicionamos o ID e mais alguns campos para clareza
+
+        String infoParcelas = "";
+        if (estadoDoEmprestimo == EstadoDoEmprestimo.FECHADO) {
+            infoParcelas = String.format("\tParcelas Restantes: %d / %d\n",
+                    this.parcelasRestantes,
+                    this.quantidadeDeParcelas
+            );
+        }
+        else {
+            infoParcelas = String.format("\tTotal de parcelas: %d\n",
+                    this.quantidadeDeParcelas
+            );
+
+        }
+
         return String.format(
                 "Emprestimo (ID: %d) {\n" +
                         "\tTomador: %s\n" +
                         "\tCredor Atual: %s\n" +
                         "\tJuros Atual: %.2f%%\n" +
                         "\tValor solicitado: %s %s\n" +
+                        "%s" +
                         "\tEstado do Emprestimo: %s\n" +
                         "}",
                 id,
@@ -114,7 +133,10 @@ public class Emprestimo {
                 jurosAtual,
                 moedaSolicitada.getSimbolo(),
                 quantidadeMoedaSolicitada,
+                infoParcelas,
                 estadoDoEmprestimo
         );
     }
+
+
 }

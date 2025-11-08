@@ -61,6 +61,10 @@ public class UserService {
             } else {
                 System.err.println("Erro no cadastro (SQL): " + e.getMessage());
             }
+
+        } catch (RuntimeException e) {
+
+            System.err.println("Erro no cadastro: " + e.getMessage());
         }
     }
 

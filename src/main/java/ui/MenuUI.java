@@ -188,6 +188,11 @@ public class MenuUI {
                 System.out.println("Voltando...");
                 break;
             case 1:
+                if (emprestimo.getEstadoDoEmprestimo().equals(EstadoDoEmprestimo.FECHADO))
+                {
+                    System.err.println("Já esta fechado!!");
+                    break;
+                }
                 if (emprestimo.getTomador().equals(pessoaLogada)) {
                     try {
                         LeilaoService.encerrarLeilao(emprestimo);
